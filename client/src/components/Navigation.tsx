@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -10,7 +11,7 @@ type NavItem = {
 };
 
 const Navigation = () => {
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth(); //  const { user, signOut } = useAuth();
   const location = useLocation();
   const [userRole] = useState('admin'); // This would come from your auth context in a real app
 

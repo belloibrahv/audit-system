@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+// import { useAuth } from '../context/AuthContext';
 import MainLayout from '../layouts/MainLayout';
-import Card from '../components/Card';
+// import Card from '../components/Card';
 import Loader from '../components/Loader';
 import api from '../services/api';
 
@@ -21,7 +21,7 @@ type RecentAudit = {
 };
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentAudits, setRecentAudits] = useState<RecentAudit[]>([]);
