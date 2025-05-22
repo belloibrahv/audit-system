@@ -16,6 +16,7 @@ interface CreateUserData {
 
 interface AuthContextType {
   user: User | null;
+  isLoading: boolean;  // Add this
   signIn: (email: string, password: string) => Promise<User>;
   signOut: () => Promise<void>;
   createUser: (userData: CreateUserData) => Promise<void>;
@@ -28,6 +29,7 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 // Create the provider component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);  // Add this
 
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -72,6 +74,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Initialize auth state
     const initAuth = async () => {
       try {
+        setIsLoading(true);  // Add this
         // Check for existing session
         const { data: { session }, error } = await supabase.auth.getSession();
         
@@ -85,6 +88,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (err) {
         console.error('Auth initialization error:', err);
+      } finally {
+        setIsLoading(false);  // Add this
       }
     };
 
@@ -107,6 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={{ 
       user, 
+      isLoading,  // Add this
       signIn, 
       signOut, 
       createUser,

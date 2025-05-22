@@ -39,17 +39,18 @@ const Login = () => {
     }
 
     try {
-      const result = await signIn(email, password);
-      console.log('Sign in successful:', result);
+      console.log('Attempting login...'); // Add debug log
+      await signIn(email, password);
+      console.log('Login successful'); // Add debug log
       navigate('/dashboard');
     } catch (error) {
-      console.error('Detailed login error:', error);
+      console.error('Login failed:', error); // Add debug log
       setError(
         error instanceof Error
           ? `Login failed: ${error.message}`
           : 'An error occurred during sign in'
       );
-       } finally {
+    } finally {
       setIsLoading(false);
     }
   };

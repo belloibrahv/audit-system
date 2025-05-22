@@ -1,8 +1,9 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
+// import LoadingSpinner from './components/LoadingSpinner';
 
 // Pages
 import Login from './pages/Login';
@@ -30,12 +31,18 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
         <Router>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/" element={<MainLayout><Navigate to="/dashboard" replace /></MainLayout>} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Navigate to="/dashboard" replace />
+                </MainLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard" element={<MainLayout><Dashboard /></MainLayout>} />
             <Route path="/audits" element={<MainLayout><AuditsList /></MainLayout>} />
             <Route path="/entities" element={<MainLayout><EntitiesList /></MainLayout>} />
@@ -65,8 +72,8 @@ function App() {
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Router>
-      </AuthProvider>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </AuthProvider>
   );
 }
 
