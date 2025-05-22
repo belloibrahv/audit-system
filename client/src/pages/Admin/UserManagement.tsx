@@ -1,12 +1,22 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
+interface UserFormData {
+  email: string;
+  password: string;
+  role: string;
+  firstName: string;
+  lastName: string;
+}
+
 const UserManagement = () => {
   const { createUser } = useAuth();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<UserFormData>({
     email: '',
     password: '',
-    role: 'viewer'
+    role: 'auditor',
+    firstName: '',
+    lastName: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -16,17 +26,23 @@ const UserManagement = () => {
     setError('');
     setSuccess('');
 
-    const { error } = await createUser(
-      formData.email,
-      formData.password,
-      formData.role
-    );
-
-    if (error) {
-      setError(error.message);
-    } else {
+    try {
+      await createUser({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            role: formData.role,
+            firstName: formData.firstName,
+            lastName: formData.lastName
+          }
+        }
+      });
       setSuccess('User created successfully');
-      setFormData({ email: '', password: '', role: 'viewer' });
+      setFormData({ email: '', password: '', role: 'auditor', firstName: '', lastName: '' });
+    } catch (error) {
+      setError('Error creating user');
+      console.error('Error creating user:', error);
     }
   };
 
@@ -87,6 +103,32 @@ const UserManagement = () => {
             <option value="reviewer">Reviewer</option>
             <option value="admin">Admin</option>
           </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            First Name
+          </label>
+          <input
+            type="text"
+            value={formData.firstName}
+            onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Last Name
+          </label>
+          <input
+            type="text"
+            value={formData.lastName}
+            onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            required
+          />
         </div>
 
         <button

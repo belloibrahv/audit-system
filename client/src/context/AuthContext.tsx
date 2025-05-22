@@ -2,10 +2,24 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 
+interface CreateUserData {
+  email: string;
+  password: string;
+  options?: {
+    data?: {
+      role?: string;
+      firstName?: string;
+      lastName?: string;
+    };
+  };
+}
+
 interface AuthContextType {
   user: User | null;
+  signIn: (email: string, password: string) => Promise<User>;
   signOut: () => Promise<void>;
-  // ...existing code...
+  createUser: (userData: CreateUserData) => Promise<void>;
+  hasRole: (role: string) => boolean;
 }
 
 // Create the context with a default value
@@ -14,6 +28,45 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 // Create the provider component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+
+  const signIn = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    if (!data.user) throw new Error('No user returned');
+    return data.user;
+  };
+
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    setUser(null);
+  };
+
+  const createUser = async (userData: CreateUserData) => {
+    const { data, error } = await supabase.auth.signUp(userData);
+    if (error) throw error;
+    
+    if (data.user) {
+      // Create profile record
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: data.user.id,
+            email: userData.email,
+            role: userData.options?.data?.role || 'auditor',
+            first_name: userData.options?.data?.firstName,
+            last_name: userData.options?.data?.lastName
+          }
+        ]);
+      
+      if (profileError) throw profileError;
+    }
+  };
+
+  const hasRole = (role: string): boolean => {
+    return user?.user_metadata?.role === role;
+  };
 
   useEffect(() => {
     // Initialize auth state
@@ -51,21 +104,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      setUser(null);
-      // Clear any local storage or state if needed
-      localStorage.removeItem('supabase.auth.token');
-    } catch (error) {
-      console.error('Error signing out:', error);
-      throw error;
-    }
-  };
-
   return (
-    <AuthContext.Provider value={{ user, signOut /* ...other values */ }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      signIn, 
+      signOut, 
+      createUser,
+      hasRole 
+    }}>
       {children}
     </AuthContext.Provider>
   );

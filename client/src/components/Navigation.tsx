@@ -10,8 +10,12 @@ type NavItem = {
 };
 
 const Navigation = () => {
-  const { user, signOut, hasRole } = useAuth();
+  const { signOut, user } = useAuth();
   const location = useLocation();
+
+  const hasRole = (role: string): boolean => {
+    return user?.user_metadata?.role === role;
+  };
 
   const navItems: NavItem[] = [
     { name: 'Dashboard', path: '/dashboard', icon: '📊', allowedRoles: ['admin', 'auditor', 'reviewer', 'viewer'] },
