@@ -1,7 +1,8 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import MainLayout from './layouts/MainLayout';
 
 // Pages
 import Login from './pages/Login';
@@ -15,6 +16,7 @@ import AuditForm from './pages/Audits/AuditForm';
 import AuditDetails from './pages/Audits/AuditDetails';
 import FindingForm from './pages/Findings/FindingForm';
 import FindingDetails from './pages/Findings/FindingDetails';
+import UserManagement from './pages/Admin/UserManagement';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -33,131 +35,33 @@ function App() {
         <Router>
           <Routes>
             <Route path="/login" element={<Login />} />
-            
-            {/* Protected routes */}
+            <Route path="/" element={<MainLayout><Navigate to="/dashboard" replace /></MainLayout>} />
+            <Route path="/dashboard" element={<MainLayout><Dashboard /></MainLayout>} />
+            <Route path="/audits" element={<MainLayout><AuditsList /></MainLayout>} />
+            <Route path="/entities" element={<MainLayout><EntitiesList /></MainLayout>} />
+            <Route path="/entities/new" element={<MainLayout><EntityForm /></MainLayout>} />
+            <Route path="/entities/:id" element={<MainLayout><EntityForm /></MainLayout>} />
+            <Route path="/plans" element={<MainLayout><PlansList /></MainLayout>} />
+            <Route path="/plans/new" element={<MainLayout><PlanForm /></MainLayout>} />
+            <Route path="/plans/:id" element={<MainLayout><PlanForm /></MainLayout>} />
+            <Route path="/audits/new" element={<MainLayout><AuditForm /></MainLayout>} />
+            <Route path="/audits/:id" element={<MainLayout><AuditDetails /></MainLayout>} />
+            <Route path="/audits/:id/edit" element={<MainLayout><AuditForm /></MainLayout>} />
+            <Route path="/audits/:auditId/findings/new" element={<MainLayout><FindingForm /></MainLayout>} />
+            <Route path="/findings/:id" element={<MainLayout><FindingDetails /></MainLayout>} />
+            <Route path="/findings/:id/edit" element={<MainLayout><FindingForm /></MainLayout>} />
+            {/* Admin routes */}
             <Route
-              path="/dashboard"
+              path="/admin/users"
               element={
-                <ProtectedRoute>
-                  <Dashboard />
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <MainLayout>
+                    <UserManagement />
+                  </MainLayout>
                 </ProtectedRoute>
               }
             />
-            
-            {/* Entity routes */}
-            <Route
-              path="/entities"
-              element={
-                <ProtectedRoute>
-                  <EntitiesList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/entities/new"
-              element={
-                <ProtectedRoute>
-                  <EntityForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/entities/:id"
-              element={
-                <ProtectedRoute>
-                  <EntityForm />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Plan routes */}
-            <Route
-              path="/plans"
-              element={
-                <ProtectedRoute>
-                  <PlansList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/plans/new"
-              element={
-                <ProtectedRoute>
-                  <PlanForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/plans/:id"
-              element={
-                <ProtectedRoute>
-                  <PlanForm />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Audit routes */}
-            <Route
-              path="/audits"
-              element={
-                <ProtectedRoute>
-                  <AuditsList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/audits/new"
-              element={
-                <ProtectedRoute>
-                  <AuditForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/audits/:id"
-              element={
-                <ProtectedRoute>
-                  <AuditDetails />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/audits/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <AuditForm />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Finding routes */}
-            <Route
-              path="/audits/:auditId/findings/new"
-              element={
-                <ProtectedRoute>
-                  <FindingForm />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/findings/:id"
-              element={
-                <ProtectedRoute>
-                  <FindingDetails />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/findings/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <FindingForm />
-                </ProtectedRoute>
-              }
-            />
-            
             {/* Default route */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Router>

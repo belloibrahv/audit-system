@@ -1,55 +1,77 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 
-type AuthContextType = {
+interface AuthContextType {
   user: User | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-};
+  // ...existing code...
+}
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Create the context with a default value
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Create the provider component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check active sessions and set the user
+    // Initialize auth state
+    const initAuth = async () => {
+      try {
+        // Check for existing session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session fetch error:', error);
+          return;
+        }
+
+        if (session) {
+          setUser(session.user);
+        }
+      } catch (err) {
+        console.error('Auth initialization error:', err);
+      }
+    };
+
+    initAuth();
+
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (event, session) => {
+        console.log('Auth state changed:', event, session); // Debug log
+        
         setUser(session?.user ?? null);
-        setLoading(false);
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
-  };
-
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    return { error };
-  };
-
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setUser(null);
+      // Clear any local storage or state if needed
+      localStorage.removeItem('supabase.auth.token');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, signOut /* ...other values */ }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
+// Create and export the hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

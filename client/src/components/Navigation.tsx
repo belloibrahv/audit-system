@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -11,9 +10,8 @@ type NavItem = {
 };
 
 const Navigation = () => {
-  const { signOut } = useAuth(); //  const { user, signOut } = useAuth();
+  const { user, signOut, hasRole } = useAuth();
   const location = useLocation();
-  const [userRole] = useState('admin'); // This would come from your auth context in a real app
 
   const navItems: NavItem[] = [
     { name: 'Dashboard', path: '/dashboard', icon: '📊', allowedRoles: ['admin', 'auditor', 'reviewer', 'viewer'] },
@@ -26,7 +24,7 @@ const Navigation = () => {
   ];
 
   const filteredNavItems = navItems.filter(item => 
-    item.allowedRoles.includes(userRole)
+    item.allowedRoles.some(role => hasRole(role))
   );
 
   return (
@@ -52,6 +50,18 @@ const Navigation = () => {
           </li>
         ))}
       </ul>
+      
+      {hasRole('admin') && (
+        <div className="mt-4">
+          <Link
+            to="/admin/users"
+            className="flex items-center p-3 rounded-md hover:bg-gray-700 transition-colors"
+          >
+            <span className="mr-3">👥</span>
+            User Management
+          </Link>
+        </div>
+      )}
       
       <div className="absolute bottom-0 left-0 right-0 p-4">
         <button
