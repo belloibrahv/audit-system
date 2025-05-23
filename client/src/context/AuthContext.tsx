@@ -1,129 +1,59 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import type { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { User } from '@supabase/supabase-js';
-
-interface CreateUserData {
-  email: string;
-  password: string;
-  options?: {
-    data?: {
-      role?: string;
-      firstName?: string;
-      lastName?: string;
-    };
-  };
-}
 
 interface AuthContextType {
   user: User | null;
-  isLoading: boolean;  // Add this
-  signIn: (email: string, password: string) => Promise<User>;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  createUser: (userData: CreateUserData) => Promise<void>;
-  hasRole: (role: string) => boolean;
+  createUser: (credentials: { email: string; password: string }) => Promise<void>;
 }
 
-// Create the context with a default value
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Create the provider component
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);  // Add this
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check active sessions
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
-    if (!data.user) throw new Error('No user returned');
-    return data.user;
   };
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-    setUser(null);
   };
 
-  const createUser = async (userData: CreateUserData) => {
-    const { data, error } = await supabase.auth.signUp(userData);
+  const createUser = async ({ email, password }: { email: string; password: string }) => {
+    const { error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
-    
-    if (data.user) {
-      // Create profile record
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: data.user.id,
-            email: userData.email,
-            role: userData.options?.data?.role || 'auditor',
-            first_name: userData.options?.data?.firstName,
-            last_name: userData.options?.data?.lastName
-          }
-        ]);
-      
-      if (profileError) throw profileError;
-    }
   };
-
-  const hasRole = (role: string): boolean => {
-    return user?.user_metadata?.role === role;
-  };
-
-  useEffect(() => {
-    // Initialize auth state
-    const initAuth = async () => {
-      try {
-        setIsLoading(true);  // Add this
-        // Check for existing session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Session fetch error:', error);
-          return;
-        }
-
-        if (session) {
-          setUser(session.user);
-        }
-      } catch (err) {
-        console.error('Auth initialization error:', err);
-      } finally {
-        setIsLoading(false);  // Add this
-      }
-    };
-
-    initAuth();
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session); // Debug log
-        
-        setUser(session?.user ?? null);
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isLoading,  // Add this
-      signIn, 
-      signOut, 
-      createUser,
-      hasRole 
-    }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signOut, createUser }}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-// Create and export the hook
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

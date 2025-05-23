@@ -21,7 +21,7 @@ const UserManagement = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -29,14 +29,7 @@ const UserManagement = () => {
     try {
       await createUser({
         email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            role: formData.role,
-            firstName: formData.firstName,
-            lastName: formData.lastName
-          }
-        }
+        password: formData.password
       });
       setSuccess('User created successfully');
       setFormData({ email: '', password: '', role: 'auditor', firstName: '', lastName: '' });
@@ -62,7 +55,7 @@ const UserManagement = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleCreateUser} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">
             Email

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import type { PostgrestError } from '@supabase/supabase-js';
 import {
   ClockIcon,
   MapPinIcon,
@@ -22,15 +23,7 @@ interface AuditTask {
   created_at: string;
 }
 
-type PostgrestError = {
-  message: string;
-  details: string;
-  hint: string;
-  code: string;
-};
-
 const Dashboard = () => {
-  // State management
   const { user } = useAuth();
   const [tasks, setTasks] = useState<AuditTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,34 +47,15 @@ const Dashboard = () => {
 
       const { data, error } = await supabase
         .from('audits')
-        .select(`
-          id,
-          title,
-          location,
-          status,
-          progress,
-          due_date,
-          created_at
-        `)
-        .order('created_at', { ascending: false })
-        .limit(5);
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      if (data) {
-        const formattedTasks = data.map(task => ({
-          id: task.id,
-          title: task.title || 'Untitled Audit',
-          location: task.location || 'No location',
-          status: task.status || 'not_started',
-          progress: task.progress || 0,
-          dueDate: task.due_date || new Date().toISOString(),
-          created_at: task.created_at
-        }));
-        setTasks(formattedTasks);
-      }
+      setTasks(data || []);
     } catch (err) {
       const error = err as PostgrestError;
+      console.error('Error fetching tasks:', error);
       setError(error.message);
       setTasks([]);
     } finally {
@@ -182,7 +156,7 @@ const Dashboard = () => {
 
   // Main render
   return (
-    <div className="p-6">
+    <div className="space-y-6 p-4">
       {/* Header Section */}
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -250,3 +224,23 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+interface DashboardCardProps {
+  title: string;
+  value: string;
+  icon: string;
+}
+
+export const DashboardCard = ({ title, value, icon }: DashboardCardProps) => {
+  return (
+    <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="mt-1 text-3xl font-semibold text-gray-900">{value}</p>
+        </div>
+        <span className="text-2xl">{icon}</span>
+      </div>
+    </div>
+  );
+};

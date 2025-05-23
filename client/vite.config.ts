@@ -6,4 +6,12 @@ export default defineConfig({
   css: {
     postcss: './postcss.config.cjs',
   },
-});
+  optimizeDeps: {
+    include: ['zod']
+  },
+  resolve: {
+    alias: {
+      '@': '/src'
+    }
+  }
+})
